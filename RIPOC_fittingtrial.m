@@ -4,24 +4,11 @@
 % output : translation , rotation , scaling
 
 
-%% 画像入力
-AI = rgb2gray(imread('luna1_1.png'));
-
 %% サイズ決定
-[height, width ] = size(AI);
+ width = 256;
+ height = 256;
  cy = height/2;
  cx = width/2;
-
-BI = imtranslate(AI,[5.5, -19]);
-BI = ImageRotateScale(BI,-100,1.2,height,width);
-
-% AI = imread('img2.bmp');
-% BI = imread('img2.bmp');
-% % BI = ImageRotateScale(BI,0,1.3,256,256);
-% BI = ImageRotateScale(BI,-100,1.2,256,256);
-% %BI = imtranslate(BI,[5, -19]);
-
-
 
 %% 窓関数の準備 （画像端の影響を避けるため）
 % ①画像の2次元ハニング窓：
@@ -30,19 +17,31 @@ Rhan_win = zeros(width);
 % ②S/N比の小さい 広域をカットする窓
 cut_win = zeros(width);
 
-for i = 1 :height
-    for j = 1:width
+for i = 1 :256
+    for j = 1:256
 %         dis = sqrt(((cx-i)*(cx-i)+(cx-j)*(cx-j))/128/128/2);
 %         han_win(i,j) = 0.5*(1.0 - cos(pi*dis));
-            han_win(i,j) = 0.25 * (1.0 + cos(pi*abs(cy- i) / height))*(1.0 + cos(pi*abs(cx - j) / width));
+            han_win(i,j) = 0.25 * (1.0 + cos(pi*abs(128 - i) / 128.0))*(1.0 + cos(pi*abs(128 - j) / 128.0));
             % Root han_win
-            Rhan_win(i,j)=abs(cos(pi*abs(cy - i) / height)*cos(pi*abs(cx - j) / width));
+            Rhan_win(i,j)=abs(cos(pi*abs(128 - i) / 256)*cos(pi*abs(128 - j) / 256));
 %           Rhan_win(i,j)=1;
-           if abs(i-cx) + abs(j-cy) < cx
+           if abs(i-cx) + abs(j-cy) < 128
                 cut_win(i,j) = 1.0;
            end
     end
 end
+
+
+%% 画像入力
+%  AI = rgb2gray(imread('Picture 6.jpg'));
+%  BI = rgb2gray(imread('Picture 14.jpg'));
+
+AI = imread('img2.bmp');
+BI = imread('img2.bmp');
+% BI = ImageRotateScale(BI,0,1.3,256,256);
+   BI = ImageRotateScale(BI,-100,1.2,256,256);
+%BI = imtranslate(BI,[5, -19]);
+
 
 
 
@@ -51,6 +50,19 @@ end
 IA = Rhan_win .* double((AI));
 IB = Rhan_win .* double(BI);
  
+%   IA = Diff_image(Rhan_win .* double(AI));
+%   IA = Binarization(IA,10);
+%  IB = Diff_image(Rhan_win .* double(BI));
+%  IB = Binarization(IB,10);
+%  
+ 
+%%　グレースケール化
+%IA=rgb2gray(AI);
+%IB=rgb2gray(BI);
+% IA=imresize(AI,[width height]);
+% IB=imresize(BI,[width height]);
+
+
 %%切り出し
 % IA = imcrop(AI,[ cx-width/2,cy-height/2,width-1,height-1]);
 % IB = imcrop(BI,[ cx-width/2,cy-height/2,width-1,height-1]); 
@@ -70,23 +82,21 @@ As= fftshift(log(abs(A)+1));
 Bs= fftshift(log(abs(B)+1));
 
 %% Log-Poler Transformation
-% need bilinear interpolation
 
 lpcA = zeros(height,width);
 lpcB = zeros(height,width);
 cx = width / 2;
 cy = height / 2;
 
-% cut off val of LPF 
-LPmin = width*(1-log2(2*pi)/log2(width));
-
-%start logplolar 
+% 最適な　M：　512*512=100(82.5) 256*256=55(46.234) ただし，広域カットするときは63
+% 距離方向をどの程度の対数でまとめるかというお話。有効域を出来るだけ入れて計算したい
+M = 55;
 for i= 0:width-1
-        r =power(width,(i)/width);
     for j= 0:height-1
+        r =exp(i/M);
         x=r*cos(2*pi*j/height)+cx;
         y=r*sin(2*pi*j/height)+cy;
-        if r < 128  % in the circle
+        if 0 < x && x < width - 1 && 0 < y && y < height - 1
              x0 = floor(x);
              y0 = floor(y);
              x1 = x0 + 1.0;
@@ -98,13 +108,13 @@ for i= 0:width-1
             %　Bilinear補完
             val=As(y0+1,x0+1)*w0*h0 + As(y0+1,x1+1)*w1*h0+ As(y1+1,x0+1)*w0*h1 + As(y1+1,x1+1)*w1*h1;
             %　ほぼ補間でできている低域をCutOffする
-            if i > LPmin 
+            if i > 180 && i < 270
                  lpcA(j+1,i+1)=val;
             else
                  lpcA(j+1,i+1)=0;
             end
             val=Bs(y0+1,x0+1)*w0*h0 + Bs(y0+1,x1+1)*w1*h0+ Bs(y1+1,x0+1)*w0*h1 + Bs(y1+1,x1+1)*w1*h1;
-            if i > LPmin 
+            if i > 180  && i < 270
                  lpcB(j+1,i+1)=val;
             else
                  lpcB(j+1,i+1)=0;
@@ -128,18 +138,25 @@ Pp = fftshift(ifft2(Ap.*Bp));
 px=y;
 py=x(y);
 
-%% Bilinear補間
-sum = Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1)+Pp(py-1,px)+Pp(py,px)+Pp(py+1,px)+Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1);
+% %% Bilinear補間
+% sum = Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1)+Pp(py-1,px)+Pp(py,px)+Pp(py+1,px)+Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1);
+% 
+% pxx = ( Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1) ) * (px-1) + ( Pp(py-1,px)+Pp(py,px)+Pp(py+1,px) ) * px + ( Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1) )* (px+1);
+% pxx = pxx/sum;
+% 
+% pyy = ( Pp(py-1,px-1)+Pp(py-1,px)+Pp(py-1,px+1) ) * (py-1) + ( Pp(py,px-1)+Pp(py,px)+Pp(py,px+1) ) * (py) + ( Pp(py+1,px-1)+Pp(py+1,px)+Pp(py+1,px+1) ) * (py+1);
+% pyy= pyy/sum;
 
-pxx = ( Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1) ) * (px-1) + ( Pp(py-1,px)+Pp(py,px)+Pp(py+1,px) ) * px + ( Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1) )* (px+1);
-pxx = pxx/sum;
+%% fitting
+[amp,pxx ,pyy] = POCfitting(px ,py,Pp);
 
-pyy = ( Pp(py-1,px-1)+Pp(py-1,px)+Pp(py-1,px+1) ) * (py-1) + ( Pp(py,px-1)+Pp(py,px)+Pp(py,px+1) ) * (py) + ( Pp(py+1,px-1)+Pp(py+1,px)+Pp(py+1,px+1) ) * (py+1);
-pyy= pyy/sum;
 
 dx = width/2 - pxx + 1;
 dy = height/2 - pyy + 1;
 
+%% Scale量の補正
+% dx = dx * 82/M;
+dx = dx * 47.0/M;
 
 %% 回転量には2つのピークが出現する
 theta1 = 360 * dy / height;
