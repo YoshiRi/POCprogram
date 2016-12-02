@@ -17,7 +17,6 @@ BI = ImageRotateScale(BI,-100,1.2,256,256);
 
 
 %% サイズ決定
-get_image
 width = 256;
  height = 256;
  cy = height/2;
@@ -92,7 +91,7 @@ cy = height / 2;
 
 % 最適な　M：　512*512=100(82.5) 256*256=55(46.234) ただし，広域カットするときは63
 % 距離方向をどの程度の対数でまとめるかというお話。有効域を出来るだけ入れて計算したい
-M = 55;
+M = 47;
 for i= 0:width-1
     for j= 0:height-1
         r =exp(i/M);
@@ -113,13 +112,13 @@ for i= 0:width-1
             if i > 180 && i < 270
                  lpcA(j+1,i+1)=val;
             else
-                 lpcA(j+1,i+1)=0;
+                 lpcA(j+1,i+1)=val;
             end
             val=Bs(y0+1,x0+1)*w0*h0 + Bs(y0+1,x1+1)*w1*h0+ Bs(y1+1,x0+1)*w0*h1 + Bs(y1+1,x1+1)*w1*h1;
             if i > 180  && i < 270
                  lpcB(j+1,i+1)=val;
             else
-                 lpcB(j+1,i+1)=0;
+                 lpcB(j+1,i+1)=val;
             end
         end
     end

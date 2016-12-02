@@ -1,4 +1,4 @@
-% 2016/9/12 Yoshi Ri @ Univ Tokyo
+% 2016/11/28 Yoshi Ri @ Univ Tokyo
 % RIPOC program 
 % input : 2 images
 % output : translation , rotation , scaling
@@ -13,7 +13,7 @@ AI = rgb2gray(imread('luna1_1.png'));
  cx = width/2;
 
  % Translation, rotation and scaling
-BI = imtranslate(AI,[5.5, -19]);
+BI = imtranslate(AI,[5.2, -19.6]);
 BI = ImageRotateScale(BI,-100,1.2,height,width);
 
 
@@ -67,15 +67,23 @@ cx = width / 2;
 cy = height / 2;
 
 % cut off val of LPF 
-LPmin = width*(1-log2(2*pi)/log2(width));
+LPmin_ = width*(1-log2(2*pi)/log2(width));
+HPmax_ = width*(1-log2(4)/log2(width));
+% marume
+LPmin = floor(LPmin_)+1;
+HPmax = floor(HPmax_);
 
-%start logplolar 
+M = floor (width / (HPmax-LPmin));
+M = 4;
+
+%% logplolar  Transformation with filter
 for i= 0:width-1
-        r =power(width,(i)/width);
+        i_mag  = LPmin + i/M;
+        r =power(width,(i_mag)/width);
     for j= 0:height-1
         x=r*cos(2*pi*j/height)+cx;
         y=r*sin(2*pi*j/height)+cy;
-        if r < cx  % in the circle
+        if r < cx-1  % in the circle
              x0 = floor(x);
              y0 = floor(y);
              x1 = x0 + 1.0;
@@ -86,18 +94,9 @@ for i= 0:width-1
             h1=y-y0;
             %　Bilinear補完
             val=As(y0+1,x0+1)*w0*h0 + As(y0+1,x1+1)*w1*h0+ As(y1+1,x0+1)*w0*h1 + As(y1+1,x1+1)*w1*h1;
-            %　ほぼ補間でできている低域をCutOffする
-            if i > LPmin 
-                 lpcA(j+1,i+1)=val;
-            else
-                 lpcA(j+1,i+1)=0;
-            end
+            lpcA(j+1,i+1)=val;
             val=Bs(y0+1,x0+1)*w0*h0 + Bs(y0+1,x1+1)*w1*h0+ Bs(y1+1,x0+1)*w0*h1 + Bs(y1+1,x1+1)*w1*h1;
-            if i > LPmin 
-                 lpcB(j+1,i+1)=val;
-            else
-                 lpcB(j+1,i+1)=0;
-            end
+            lpcB(j+1,i+1)=val;
         end
     end
 end
@@ -130,10 +129,14 @@ dx = width/2 - pxx + 1;
 dy = height/2 - pyy + 1;
 
 
+%% Scale量の補正
+dx = dx/M;
+
+
 %% 回転量には2つのピークが出現する
 theta1 = 360 * dy / height;
 theta2 = theta1 + 180;
-scale = 1/power(width,dx/width)
+scale = power(width,dx/width)
 figure;
 mesh(Pp);
 ylabel('rotation axis')
@@ -142,8 +145,8 @@ zlabel('correlation value')
 
 %% 回転・拡大縮小量 を補正
 % 面倒だが角度には2つのパターンがある…
-IB_recover1 = ImageRotateScale(IB, theta1,scale,width,height);
-IB_recover2 = ImageRotateScale(IB, theta2,scale,width,height);
+IB_recover1 = ImageRotateScale(IB, theta1,1/scale,width,height);
+IB_recover2 = ImageRotateScale(IB, theta2,1/scale,width,height);
 
 %% 平行移動量検出 ＆ 回転量決定
 
