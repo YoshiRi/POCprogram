@@ -1,7 +1,10 @@
 function resizeimage = ImageRotateScale(Image,theta,scale,width,height)
 
-cx = width/2;
-cy = height/2;
+ cx = width/2;
+ cy = height/2;
+ cx = width/2 + 1/2;
+ cy = height/2 + 1/2;
+
 ct = cosd(theta);
 st = sind(theta);
 

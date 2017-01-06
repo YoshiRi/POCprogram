@@ -13,7 +13,7 @@ AI = rgb2gray(imread('luna1_1.png'));
  cx = width/2;
 
  % Translation, rotation and scaling
-BI = imtranslate(AI,[5.5, -19]);
+BI = imtranslate(AI,[50, -9]);
 BI = ImageRotateScale(BI,-100,1.2,height,width);
 
 
