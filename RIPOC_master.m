@@ -7,14 +7,20 @@
 %% ‰æ‘œ“ü—Í
 AI = rgb2gray(imread('luna1_1.png'));
 
+AI = imread('light.bmp');
+BI = imread('dark.bmp');
+% 
+ AI = imread('normal.bmp');
+BI = imread('light.bmp');
+
 %% ƒTƒCƒYŒˆ’è
 [height, width ] = size(AI);
  cy = height/2;
  cx = width/2;
 
  % Translation, rotation and scaling
-BI = imtranslate(AI,[50, -9]);
-BI = ImageRotateScale(BI,-100,1.2,height,width);
+ BI = imtranslate(BI,[40, -9]);
+ BI = ImageRotateScale(BI,-100,1.0,height,width);
 
 
 
