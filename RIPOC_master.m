@@ -11,18 +11,18 @@ AI = imread('light.bmp');
 BI = imread('dark.bmp');
 % 
  AI = imread('normal.bmp');
-BI = imread('light.bmp');
+ BI = imread('light.bmp');
+%  BI = AI;
 
+ 
 %% サイズ決定
 [height, width ] = size(AI);
  cy = height/2;
  cx = width/2;
 
  % Translation, rotation and scaling
- BI = imtranslate(BI,[40, -9]);
+ BI = imtranslate(BI,[40, -20]);
  BI = ImageRotateScale(BI,-100,1.0,height,width);
-
-
 
 
 %% 窓関数の準備 （画像端の影響を避けるため）
@@ -36,6 +36,21 @@ for i = 1 :height
             han_win(i,j) = 0.25 * (1.0 + cos(pi*abs(cy- i) / height))*(1.0 + cos(pi*abs(cx - j) / width));
             % Root han_win
             Rhan_win(i,j)=abs(cos(pi*abs(cy - i) / height)*cos(pi*abs(cx - j) / width));
+            if i >height/8  &&  i<height*7/8
+                fi = 1;
+            elseif i <= height/8
+                fi = (i-1)/height * 8;
+            elseif i >= height*7/8
+                fi = (height - i)/height *8;
+            end
+            if j >width/8  &&  j<width*7/8
+                fj = 1;
+            elseif j <= width/8
+                fj = (j-1)/width * 8;
+            elseif j >= width*7/8
+                fj = (width - j)/width *8;
+            end
+            trapez_win(i,j)=fi*fj;
     end
 end
 
@@ -43,9 +58,18 @@ end
 
 %% 窓関数（フィルタ）を掛ける(convolute window) 
 % IA = Rhan_win .* double(rgb2gray(AI));
-IA = Rhan_win .* double((AI));
-IB = Rhan_win .* double(BI);
- 
+ IA = han_win .* double((AI));
+ IB = han_win .* double(BI);
+
+ IA = Rhan_win .* double((AI));
+ IB = Rhan_win .* double(BI);
+
+% IA = trapez_win .* double((AI));
+% IB = trapez_win .* double(BI);
+
+% IA = double((AI));
+% IB = double(BI);
+% 
 %%切り出し
 % IA = imcrop(AI,[ cx-width/2,cy-height/2,width-1,height-1]);
 % IB = imcrop(BI,[ cx-width/2,cy-height/2,width-1,height-1]); 
@@ -232,3 +256,12 @@ imshow(IB,[0 255]);
 SaveFigPDF(f4,'compared');
 end
 
+%% evaluation
+ref = double(AI);
+comp = double(BI);
+
+comp_recover = ImageRotateScale(comp, theta,scale,width,height);
+res = imtranslate(comp_recover,[-dx, -dy]);
+Error = abs(ref - res);
+
+SSD =  Error(:).' * Error(:)
