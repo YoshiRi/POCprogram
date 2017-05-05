@@ -21,8 +21,8 @@ BI = imread('dark.bmp');
  cx = width/2;
 
  % Translation, rotation and scaling
- BI = imtranslate(BI,[40, -20]);
- BI = ImageRotateScale(BI,-100,1.0,height,width);
+ BI = imtranslate(BI,[40, -10]);
+ BI = ImageRotateScale(BI,-100,1.2,height,width);
 
 
 %% ‘‹ŠÖ”‚Ì€”õ i‰æ‘œ’[‚Ì‰e‹¿‚ğ”ğ‚¯‚é‚½‚ßj
