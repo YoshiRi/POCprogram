@@ -5,7 +5,7 @@
 
 
 %% 画像入力
-AI = rgb2gray(imread('luna1.png'));
+AI = rgb2gray(imread('luna1_1.png'));
 
 %% サイズ決定
 [height, width ] = size(AI);
@@ -23,15 +23,16 @@ Rhan_win = zeros(width);
 % ②S/N比の小さい 広域をカットする窓
 cut_win = zeros(width);
 
+hsz = height/2;
 for i = 1 :height
     for j = 1:width
 %         dis = sqrt(((cx-i)*(cx-i)+(cx-j)*(cx-j))/128/128/2);
 %         han_win(i,j) = 0.5*(1.0 - cos(pi*dis));
-            han_win(i,j) = 0.25 * (1.0 + cos(pi*abs(128 - i) / 128.0))*(1.0 + cos(pi*abs(128 - j) / 128.0));
+            han_win(i,j) = 0.25 * (1.0 + cos(pi*abs(hsz - i) / hsz))*(1.0 + cos(pi*abs(hsz - j) / hsz));
             % Root han_win
-            Rhan_win(i,j)=abs(cos(pi*abs(128 - i) / 256)*cos(pi*abs(128 - j) / 256));
+            Rhan_win(i,j)=abs(cos(pi*abs(hsz - i) / height)*cos(pi*abs(hsz - j) / height));
 %           Rhan_win(i,j)=1;
-           if abs(i-cx) + abs(j-cy) < 128
+           if abs(i-cx) + abs(j-cy) < hsz
                 cut_win(i,j) = 1.0;
            end
     end
@@ -201,6 +202,8 @@ f4 = figure;
 imshow(IB,[0 255]);
 SaveFigPDF(f4,'compared');
 
+figure;
+mesh(Pp1);
 
 else
 theta = theta2
@@ -228,5 +231,9 @@ SaveFigPDF(f3,'ref_bibun');
 f4 = figure;
 imshow(IB,[0 255]);
 SaveFigPDF(f4,'compared');
+
+figure;
+mesh(Pp2);
+
 end
 

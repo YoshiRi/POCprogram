@@ -1,17 +1,18 @@
 % 2016/9/12 Yoshi Ri @ Univ Tokyo
+% 2017/8/11 Updated
 % RIPOC program 
 % input : 2 images
 % output : translation , rotation , scaling
 
 
 %% âÊëúì¸óÕ
-AI = rgb2gray(imread('luna1_1.png'));
+%AI = rgb2gray(imread('luna1_1.png'));
 
 AI = imread('light.bmp');
 BI = imread('dark.bmp');
 % 
- AI = imread('normal.bmp');
- BI = imread('light.bmp');
+% AI = imread('normal.bmp');
+% BI = imread('light.bmp');
 %  BI = AI;
 
  
@@ -21,10 +22,10 @@ BI = imread('dark.bmp');
  cx = width/2;
 
  % Translation, rotation and scaling
- BI = imtranslate(BI,[40, -10]);
+ BI = imtranslate(BI,[30, -10]);
  BI = ImageRotateScale(BI,-100,1.2,height,width);
 
-
+imwrite(uint8(BI),'rotated_dark.png')
 %% ëãä÷êîÇÃèÄîı ÅiâÊëúí[ÇÃâeãøÇîÇØÇÈÇΩÇﬂÅj
 % hannig window and root of hanning window
 han_win = zeros(width);
@@ -98,6 +99,7 @@ cy = height / 2;
 
 % cut off val of LPF 
 LPmin = width*(1-log2(2*pi)/log2(width));
+LPmin = width*(1-log2(4*pi)/log2(width));
 
 %start logplolar 
 for i= 0:width-1
@@ -105,7 +107,7 @@ for i= 0:width-1
     for j= 0:height-1
         x=r*cos(2*pi*j/height)+cx;
         y=r*sin(2*pi*j/height)+cy;
-        if r < cx  % in the circle
+        if r < cx * 3 / 5 % in the circle
              x0 = floor(x);
              y0 = floor(y);
              x1 = x0 + 1.0;
@@ -146,15 +148,22 @@ Pp = fftshift(ifft2(Ap.*Bp));
 [mx,y]=max(mm);
 px=y;
 py=x(y);
-
+% mado
+mg =1;
 %% Bilinearï‚ä‘
-sum = Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1)+Pp(py-1,px)+Pp(py,px)+Pp(py+1,px)+Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1);
+% sum_ = Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1)+Pp(py-1,px)+Pp(py,px)+Pp(py+1,px)+Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1);
+% 
+% pxx = ( Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1) ) * (px-1) + ( Pp(py-1,px)+Pp(py,px)+Pp(py+1,px) ) * px + ( Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1) )* (px+1);
+% pxx = pxx/sum_;
+% 
+% pyy = ( Pp(py-1,px-1)+Pp(py-1,px)+Pp(py-1,px+1) ) * (py-1) + ( Pp(py,px-1)+Pp(py,px)+Pp(py,px+1) ) * (py) + ( Pp(py+1,px-1)+Pp(py+1,px)+Pp(py+1,px+1) ) * (py+1);
+% pyy= pyy/sum_;
+Rect = Pp(py-mg:py+mg,px-mg:px+mg);
+vert = sum(Rect,1); horz = sum(Rect,2);
+sum11=sum(vert);
 
-pxx = ( Pp(py-1,px-1)+Pp(py,px-1)+Pp(py+1,px-1) ) * (px-1) + ( Pp(py-1,px)+Pp(py,px)+Pp(py+1,px) ) * px + ( Pp(py-1,px+1)+Pp(py,px+1)+Pp(py+1,px+1) )* (px+1);
-pxx = pxx/sum;
-
-pyy = ( Pp(py-1,px-1)+Pp(py-1,px)+Pp(py-1,px+1) ) * (py-1) + ( Pp(py,px-1)+Pp(py,px)+Pp(py,px+1) ) * (py) + ( Pp(py+1,px-1)+Pp(py+1,px)+Pp(py+1,px+1) ) * (py+1);
-pyy= pyy/sum;
+pyy=[py-mg:py+mg] * horz /sum11;
+pxx=[px-mg:px+mg] * vert' /sum11;
 
 dx = width/2 - pxx + 1;
 dy = height/2 - pyy + 1;
@@ -200,12 +209,20 @@ py2=x2(y2);
 if mx1 > mx2
 theta = theta1
 % bilinear
-sum1 = Pp1(py1-1,px1-1)+Pp1(py1,px1-1)+Pp1(py1+1,px1-1)+Pp1(py1-1,px1)+Pp1(py1,px1)+Pp1(py1+1,px1)+Pp1(py1-1,px1+1)+Pp1(py1,px1+1)+Pp1(py1+1,px1+1);
+% sum1 = Pp1(py1-1,px1-1)+Pp1(py1,px1-1)+Pp1(py1+1,px1-1)+Pp1(py1-1,px1)+Pp1(py1,px1)+Pp1(py1+1,px1)+Pp1(py1-1,px1+1)+Pp1(py1,px1+1)+Pp1(py1+1,px1+1);
+% 
+% pxx1 = ( Pp1(py1-1,px1-1)+Pp1(py1,px1-1)+Pp1(py1+1,px1-1) ) * (px1-1) + ( Pp1(py1-1,px1)+Pp1(py1,px1)+Pp1(py1+1,px1) ) * px1 + ( Pp1(py1-1,px1+1)+Pp1(py1,px1+1)+Pp1(py1+1,px1+1) )* (px1+1);
+% pxx1 = pxx1/sum1;
+% pyy1 = ( Pp1(py1-1,px1-1)+Pp1(py1-1,px1)+Pp1(py1-1,px1+1) ) * (py1-1) + ( Pp1(py1,px1-1)+Pp1(py1,px1)+Pp1(py1,px1+1) ) * (py1) + ( Pp1(py1+1,px1-1)+Pp1(py1+1,px1)+Pp1(py1+1,px1+1) ) * (py1+1);
+% pyy1= pyy1/sum1;
 
-pxx1 = ( Pp1(py1-1,px1-1)+Pp1(py1,px1-1)+Pp1(py1+1,px1-1) ) * (px1-1) + ( Pp1(py1-1,px1)+Pp1(py1,px1)+Pp1(py1+1,px1) ) * px1 + ( Pp1(py1-1,px1+1)+Pp1(py1,px1+1)+Pp1(py1+1,px1+1) )* (px1+1);
-pxx1 = pxx1/sum1;
-pyy1 = ( Pp1(py1-1,px1-1)+Pp1(py1-1,px1)+Pp1(py1-1,px1+1) ) * (py1-1) + ( Pp1(py1,px1-1)+Pp1(py1,px1)+Pp1(py1,px1+1) ) * (py1) + ( Pp1(py1+1,px1-1)+Pp1(py1+1,px1)+Pp1(py1+1,px1+1) ) * (py1+1);
-pyy1= pyy1/sum1;
+Rect = Pp1(py1-mg:py1+mg,px1-mg:px1+mg);
+vert = sum(Rect,1); horz = sum(Rect,2);
+sum11=sum(vert);
+
+pyy1=[py1-mg:py1+mg] * horz /sum11;
+pxx1=[px1-mg:px1+mg] * vert' /sum11;
+
 
 % get translation from center
 dx = width/2 - pxx1 + 1
@@ -225,17 +242,27 @@ SaveFigPDF(f3,'ref_bibun');
 f4 = figure;
 imshow(IB,[0 255]);
 SaveFigPDF(f4,'compared');
+figure;
+mesh(Pp1);
 
 
 else
 theta = theta2
-sum2 = Pp2(py2-1,px2-1)+Pp2(py2,px2-1)+Pp2(py2+1,px2-1)+Pp2(py2-1,px2)+Pp2(py2,px2)+Pp2(py2+1,px2)+Pp2(py2-1,px2+1)+Pp2(py2,px2+1)+Pp2(py2+1,px2+1);
+% sum2 = Pp2(py2-1,px2-1)+Pp2(py2,px2-1)+Pp2(py2+1,px2-1)+Pp2(py2-1,px2)+Pp2(py2,px2)+Pp2(py2+1,px2)+Pp2(py2-1,px2+1)+Pp2(py2,px2+1)+Pp2(py2+1,px2+1);
+% 
+% pxx2 = ( Pp2(py2-1,px2-1)+Pp2(py2,px2-1)+Pp2(py2+1,px2-1) ) * (px2-1) + ( Pp2(py2-1,px2)+Pp2(py2,px2)+Pp2(py2+1,px2) ) * px2 + ( Pp2(py2-1,px2+1)+Pp2(py2,px2+1)+Pp2(py2+1,px2+1) )* (px2+1);
+% pxx2 = pxx2/sum2;
+% 
+% pyy2 = ( Pp2(py2-1,px2-1)+Pp2(py2-1,px2)+Pp2(py2-1,px2+1) ) * (py2-1) + ( Pp2(py2,px2-1)+Pp2(py2,px2)+Pp2(py2,px2+1) ) * (py2) + ( Pp2(py2+1,px2-1)+Pp2(py2+1,px2)+Pp2(py2+1,px2+1) ) * (py2+1);
+% pyy2= pyy2/sum2;
 
-pxx2 = ( Pp2(py2-1,px2-1)+Pp2(py2,px2-1)+Pp2(py2+1,px2-1) ) * (px2-1) + ( Pp2(py2-1,px2)+Pp2(py2,px2)+Pp2(py2+1,px2) ) * px2 + ( Pp2(py2-1,px2+1)+Pp2(py2,px2+1)+Pp2(py2+1,px2+1) )* (px2+1);
-pxx2 = pxx2/sum2;
+Rect = Pp2(py2-mg:py2+mg,px2-mg:px2+mg);
+vert = sum(Rect,1); horz = sum(Rect,2);
+sum11=sum(vert);
 
-pyy2 = ( Pp2(py2-1,px2-1)+Pp2(py2-1,px2)+Pp2(py2-1,px2+1) ) * (py2-1) + ( Pp2(py2,px2-1)+Pp2(py2,px2)+Pp2(py2,px2+1) ) * (py2) + ( Pp2(py2+1,px2-1)+Pp2(py2+1,px2)+Pp2(py2+1,px2+1) ) * (py2+1);
-pyy2= pyy2/sum2;
+pyy2=[py2-mg:py2+mg] * horz /sum11;
+pxx2=[px2-mg:px2+mg] * vert' /sum11;
+
 
 dx = width/2 - pxx2 + 1
 dy = height/2 - pyy2 + 1
@@ -254,6 +281,9 @@ SaveFigPDF(f3,'ref_bibun');
 f4 = figure;
 imshow(IB,[0 255]);
 SaveFigPDF(f4,'compared');
+figure;
+mesh(Pp2);
+
 end
 
 %% evaluation
@@ -265,3 +295,11 @@ res = imtranslate(comp_recover,[-dx, -dy]);
 Error = abs(ref - res);
 
 SSD =  Error(:).' * Error(:)
+
+%% figure
+figure();
+stiched = [IA,IB;result,abs(double(IA)-result)];
+imshow(stiched,[0 255])
+
+stiched = [IA;IB];
+imshow(stiched,[0 255])
