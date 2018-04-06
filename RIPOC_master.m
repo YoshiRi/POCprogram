@@ -12,7 +12,7 @@ AI = imread('light.bmp');
 BI = imread('dark.bmp');
 % 
 % AI = imread('normal.bmp');
-% BI = imread('light.bmp');
+ BI = imread('light.bmp');
 %  BI = AI;
 
  
