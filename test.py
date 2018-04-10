@@ -25,6 +25,8 @@ B=cv2.imread('clouds37.png',0)
 A1=ChangeContrast(A,15)
 A2=ChangeLight(A)
 
+cv2.imwrite('cloudsref.png',A1)
+
 poc=imregpoc.imregpoc(A,B)
 poc.stitching()
 
